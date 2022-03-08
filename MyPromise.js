@@ -20,16 +20,24 @@ class MyPromise {
     constructor(executor) {
         this._state = PENDING;
         this._value = undefined;
+        this._handlers = []
         try {
             executor(this._resolve.bind(this), this._reject.bind(this))
         } catch (error) {
             this._reject(error)
         }
     }
+    _pushHandler(executor, state, resolve, reject) {
+        this._handlers.push({
+            executor, state, resolve, reject
+        })
+    }
     then(onFulfulled, onRejected) {
         return new MyPromise((resolve, reject) => {
             // 1. 成功或者失败都会做的函数
             // 2. 微队列
+            this._pushHandler(onFulfulled, FULFILLED, resolve, reject)
+            this._pushHandler(onRejected, REJECTED, resolve, reject)
         })
     }
     _changeState(newState, value) {
