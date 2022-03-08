@@ -32,12 +32,24 @@ class MyPromise {
             executor, state, resolve, reject
         })
     }
+    _runOneHandler(handler) {
+
+    }
+    _runHandlers() {
+        if (this._state == PENDING) return;
+        while (this._handlers[0]) {
+            const handler = this._handlers[0]
+            this._runOneHandler(handler)
+            this._handlers.shift()
+        }
+    }
     then(onFulfulled, onRejected) {
         return new MyPromise((resolve, reject) => {
             // 1. 成功或者失败都会做的函数
             // 2. 微队列
             this._pushHandler(onFulfulled, FULFILLED, resolve, reject)
             this._pushHandler(onRejected, REJECTED, resolve, reject)
+            this._runHandlers()// 执行队列
         })
     }
     _changeState(newState, value) {
