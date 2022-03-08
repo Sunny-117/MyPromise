@@ -2,6 +2,9 @@ const PENDING = 'pending'
 const FULFILLED = 'fulfilled'
 const REJECTED = 'rejected'
 
+function isPromise(obj) {
+    return !!(obj && typeof obj === 'object' && typeof obj.then === 'function')
+}
 function runMicroTask(callback) {
     if (process && process.nextTick) {
         process.nextTick(callback)
@@ -32,8 +35,26 @@ class MyPromise {
             executor, state, resolve, reject
         })
     }
-    _runOneHandler(handler) {
-
+    _runOneHandler({ executor, state, resolve, reject }) {
+        runMicroTask(() => {
+            if (this._state !== state) {
+                return;
+            }
+            if (typeof executor !== 'function') {
+                this._state === FULFILLED ? resolve(this._value) : reject(this._value)
+                return;
+            }
+            try {
+                const result = executor(this._value)
+                if (isPromise(result)) {
+                    result.then(resolve, reject)
+                } else {
+                    resolve(result)
+                }
+            } catch (error) {
+                reject(error)
+            }
+        })
     }
     _runHandlers() {
         if (this._state == PENDING) return;
